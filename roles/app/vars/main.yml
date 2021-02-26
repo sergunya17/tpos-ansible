@@ -1,0 +1,4 @@
+---
+# vars file for common
+
+local_file_content: "{{ lookup('file', './service_state') }}"

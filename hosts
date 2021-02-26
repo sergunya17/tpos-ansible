@@ -1,0 +1,13 @@
+# A place to put your production hosts
+# Examples:
+# 
+# [webservers]
+# localhost ansible_connection=local ansible_python_interpreter=/usr/bin/python2.7 
+#
+# [clusters]
+# beowolf.example.com ansible_ssh_user=root
+
+[front]
+10.211.2.188
+10.211.2.189
+10.211.2.190

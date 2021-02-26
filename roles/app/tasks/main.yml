@@ -1,0 +1,64 @@
+---
+
+  - name: Run check script
+    script: ./check.py "{{ local_file_content }}"
+    register: check
+    become: yes
+
+  - name: Install epel-release on CentOS
+    when: ansible_distribution == "CentOS" and check.stdout | regex_search("-start-")
+    package: name=epel-release state=latest
+    register: epel_release_installed
+    become: yes
+
+  - name: Install nginx and start
+    when: check.stdout | regex_search("-start-")
+    package: name=nginx state=latest
+    register: nginx_installed
+    become: yes
+    notify:
+      - Nginx start
+
+  - name: Copy file to server and restart nginx
+    when: check.stdout | regex_search("-(start|restart)-")
+    copy:
+      src: ./service_state
+      dest: /opt/service_state
+      force: yes
+    register: file_copied
+    become: yes
+    notify:
+      - Nginx restart
+
+  - name: Copy the nginx config file
+    when: nginx_installed is succeeded and nginx_installed is not skipped
+    template: src=nginx.conf dest=/etc/nginx/nginx.conf
+    become: yes
+    register: nginx_conf_copied
+
+  - name: Check and reload
+    become: yes
+    when: nginx_conf_copied.changed and nginx_conf_copied is not skipped
+    shell: /usr/sbin/nginx -t
+    notify:
+      - Nginx reload
+
+  - name: Force all notified handlers to run
+    meta: flush_handlers
+
+  - name: Add cron job
+    when: check.stdout | regex_search("-start-")
+    cron:
+      name: "nginx uptime"
+      job: "sed -i \"s/is .*$/is $(($(ps -o etimes= -p $(cat /var/run/nginx.pid)) / 60)) minutes/\" /opt/service_state"
+    become: yes
+    register: cron_job_added
+
+  - name: File start changing test
+    when: check.stdout | regex_search("-(start|restart)-")
+    script: ./changing_test.py
+    register: changing_test
+    become: yes
+
+  - debug: msg="{{ changing_test.stdout }}"
+    when: changing_test is succeeded and changing_test is not skipped

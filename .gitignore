@@ -1,0 +1,4 @@
+*.log
+.idea
+.vagrant
+site.retry

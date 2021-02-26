@@ -1,0 +1,13 @@
+---
+# handlers file for common
+  - name: Nginx start
+    become: yes
+    service: name=nginx state=started
+
+  - name: Nginx restart
+    become: yes
+    service: name=nginx state=restarted
+
+  - name: Nginx reload
+    become: yes
+    service: name=nginx state=reloaded
